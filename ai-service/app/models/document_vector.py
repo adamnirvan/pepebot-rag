@@ -1,15 +1,11 @@
-from sqlalchemy import (
-    Column, Integer, String, Text, DateTime, UniqueConstraint, func
-)
+from sqlalchemy import Column, Integer, String, Text, DateTime, UniqueConstraint, func
 from pgvector.sqlalchemy import Vector
 from app.core.db import Base
 
 
 class DocumentVector(Base):
     __tablename__ = "document_vectors"
-    __table_args__ = (
-        UniqueConstraint("sop_name", "varian", name="uq_sop_varian"),
-    )
+    __table_args__ = (UniqueConstraint("sop_name", "varian", name="uq_sop_varian"),)
 
     id = Column(Integer, primary_key=True, index=True)
     sop_name = Column(String(255), nullable=False, index=True)
