@@ -15,6 +15,7 @@ from app.core.config import settings
 SIMILARITY_THRESHOLD = settings.RETRIEVAL_THRESHOLD
 DEFAULT_TOP_K = settings.TOP_K
 
+
 @dataclass
 class RetrievedChunk:
     sop_name: str
@@ -24,6 +25,7 @@ class RetrievedChunk:
     distance: float
     similarity: float
 
+
 @dataclass
 class SearchResult:
     query: str
@@ -31,7 +33,10 @@ class SearchResult:
     fallback: bool = True
     best_similarity: float | None = None
 
-def search(query: str, db: Session, top_k: int = DEFAULT_TOP_K, sop_name: str | None = None) -> SearchResult:
+
+def search(
+    query: str, db: Session, top_k: int = DEFAULT_TOP_K, sop_name: str | None = None
+) -> SearchResult:
     """Mencari SOP desa terdekat menggunakan ekstensi pgvector (<=>)"""
     if not query or not query.strip():
         return SearchResult(query=query)
@@ -42,10 +47,10 @@ def search(query: str, db: Session, top_k: int = DEFAULT_TOP_K, sop_name: str | 
     # 2. Rumus kalkulasi Cosine Distance dari pgvector SQLAlchemy
     distance_col = DocumentVector.embedding.cosine_distance(vector).label("distance")
     q = db.query(DocumentVector, distance_col)
-    
+
     if sop_name:
         q = q.filter(DocumentVector.sop_name == sop_name)
-    
+
     # 3. Urutkan berdasarkan yang paling mirip (jarak terdekat), ambil 4 teratas
     rows = q.order_by(distance_col).limit(top_k).all()
 
@@ -60,7 +65,7 @@ def search(query: str, db: Session, top_k: int = DEFAULT_TOP_K, sop_name: str | 
         )
         for row in rows
     ]
-    
+
     # 4. Kalau database masih kosong
     if not chunks:
         return SearchResult(query=query)
