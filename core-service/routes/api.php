@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\WhatsAppController;
+use App\Http\Controllers\WebChatController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -19,7 +20,7 @@ use Illuminate\Support\Facades\Route;
 | Controller Fase 6.3: App\Http\Controllers\WhatsAppController
 */
 
-Route::get('/webhook/whatsapp', [WhatsAppController::class, 'verifyWebhook']);
+// Webhook untuk menerima event dari WAHA
+Route::post('/webhook/whatsapp', [WhatsAppController::class, 'handleWebhook'])->middleware('throttle:30,1');
 
-Route::post('/webhook/whatsapp', [WhatsAppController::class, 'handleWebhook'])
-    ->middleware('throttle:30,1');
+Route::post('/chat', [WebChatController::class, 'sendMessage'])->middleware('throttle:60,1');

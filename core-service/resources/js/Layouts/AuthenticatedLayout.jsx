@@ -61,16 +61,12 @@ export default function AuthenticatedLayout({ header, children }) {
                                     </Dropdown.Trigger>
 
                                     <Dropdown.Content>
-                                        <Dropdown.Link
-                                            href={route('profile.edit')}
-                                        >
-                                            Profile
-                                        </Dropdown.Link>
-                                        <Dropdown.Link
-                                            href={route('logout')}
-                                            method="post"
-                                            as="button"
-                                        >
+                                        <Dropdown.Link href={route('profile.edit')}>Profile</Dropdown.Link>
+
+                                        {/* TAMBAHKAN BARIS INI: Link untuk membuat akun admin baru */}
+                                        <Dropdown.Link href={route('register')}>Tambah Admin Baru</Dropdown.Link>
+
+                                        <Dropdown.Link href={route('logout')} method="post" as="button">
                                             Log Out
                                         </Dropdown.Link>
                                     </Dropdown.Content>
