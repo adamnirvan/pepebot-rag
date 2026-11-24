@@ -60,16 +60,72 @@ export default function AuthenticatedLayout({ header, children }) {
                                         </span>
                                     </Dropdown.Trigger>
 
+                                    
                                     <Dropdown.Content>
-                                        <Dropdown.Link href={route('profile.edit')}>Profile</Dropdown.Link>
+                                        <Dropdown.Link href={route('register')}>
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EEF4FF] text-[#3978D5] transition group-hover:bg-[#E1EBFF]">
+                                                    <svg
+                                                        className="h-5 w-5"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        viewBox="0 0 24 24"
+                                                    >
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth="1.8"
+                                                            d="M16 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2m12-13a4 4 0 11-8 0 4 4 0 018 0zm4 5v6m-3-3h6"
+                                                        />
+                                                    </svg>
+                                                </div>
 
-                                        {/* TAMBAHKAN BARIS INI: Link untuk membuat akun admin baru */}
-                                        <Dropdown.Link href={route('register')}>Tambah Admin Baru</Dropdown.Link>
+                                                <div>
+                                                    <p className="font-semibold text-[#253047]">
+                                                        Tambah Admin
+                                                    </p>
+                                                    <p className="mt-0.5 text-xs text-[#8A94A6]">
+                                                        Buat akun administrator baru
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </Dropdown.Link>
 
-                                        <Dropdown.Link href={route('logout')} method="post" as="button">
-                                            Log Out
+                                        <Dropdown.Link
+                                            href={route('logout')}
+                                            method="post"
+                                            as="button"
+                                            className="!bg-[#FFF0EE] !text-[#C34B43] hover:!bg-[#FFE3DF] focus:!bg-[#FFE3DF] border border-[#FADAD6]"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#FFF0EE] text-[#D6534A] transition group-hover:bg-[#FFE3DF]">
+                                                    <svg
+                                                        className="h-5 w-5"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        viewBox="0 0 24 24"
+                                                    >
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth="1.8"
+                                                            d="M9 17l5-5-5-5m5 5H3m9-9h6a2 2 0 012 2v14a2 2 0 01-2 2h-6"
+                                                        />
+                                                    </svg>
+                                                </div>
+
+                                                <div>
+                                                    <p className="font-semibold text-[#C34B43]">
+                                                        Logout
+                                                    </p>
+                                                    <p className="mt-0.5 text-xs text-[#8A94A6]">
+                                                        Keluar dari akun Anda
+                                                    </p>
+                                                </div>
+                                            </div>
                                         </Dropdown.Link>
                                     </Dropdown.Content>
+
                                 </Dropdown>
                             </div>
                         </div>
@@ -143,9 +199,6 @@ export default function AuthenticatedLayout({ header, children }) {
                         </div>
 
                         <div className="mt-3 space-y-1">
-                            <ResponsiveNavLink href={route('profile.edit')}>
-                                Profile
-                            </ResponsiveNavLink>
                             <ResponsiveNavLink
                                 method="post"
                                 href={route('logout')}
