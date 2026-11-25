@@ -29,7 +29,7 @@ const Trigger = ({ children }) => {
                 <div
                     className="fixed inset-0 z-40"
                     onClick={() => setOpen(false)}
-                ></div>
+                />
             )}
         </>
     );
@@ -38,7 +38,7 @@ const Trigger = ({ children }) => {
 const Content = ({
     align = 'right',
     width = '48',
-    contentClasses = 'py-1 bg-white',
+    contentClasses = 'bg-white p-2',
     children,
 }) => {
     const { open, setOpen } = useContext(DropDownContext);
@@ -51,38 +51,27 @@ const Content = ({
         alignmentClasses = 'ltr:origin-top-right rtl:origin-top-left end-0';
     }
 
-    let widthClasses = '';
-
-    if (width === '48') {
-        widthClasses = 'w-48';
-    }
+    let widthClasses = width === '48' ? 'w-64' : '';
 
     return (
-        <>
-            <Transition
-                show={open}
-                enter="transition ease-out duration-200"
-                enterFrom="opacity-0 scale-95"
-                enterTo="opacity-100 scale-100"
-                leave="transition ease-in duration-75"
-                leaveFrom="opacity-100 scale-100"
-                leaveTo="opacity-0 scale-95"
+        <Transition
+            show={open}
+            enter="transition ease-out duration-200"
+            enterFrom="opacity-0 translate-y-1 scale-95"
+            enterTo="opacity-100 translate-y-0 scale-100"
+            leave="transition ease-in duration-150"
+            leaveFrom="opacity-100 translate-y-0 scale-100"
+            leaveTo="opacity-0 translate-y-1 scale-95"
+        >
+            <div
+                className={`absolute z-50 mt-3 overflow-hidden rounded-2xl border border-[#EEF0F4] bg-white shadow-[0_12px_35px_rgba(23,32,51,0.12)] ${alignmentClasses} ${widthClasses}`}
+                onClick={() => setOpen(false)}
             >
-                <div
-                    className={`absolute z-50 mt-2 rounded-md shadow-lg ${alignmentClasses} ${widthClasses}`}
-                    onClick={() => setOpen(false)}
-                >
-                    <div
-                        className={
-                            `rounded-md ring-1 ring-black ring-opacity-5 ` +
-                            contentClasses
-                        }
-                    >
-                        {children}
-                    </div>
+                <div className={contentClasses}>
+                    {children}
                 </div>
-            </Transition>
-        </>
+            </div>
+        </Transition>
     );
 };
 
@@ -91,7 +80,7 @@ const DropdownLink = ({ className = '', children, ...props }) => {
         <Link
             {...props}
             className={
-                'block w-full px-4 py-2 text-start text-sm leading-5 text-gray-700 transition duration-150 ease-in-out hover:bg-gray-100 focus:bg-gray-100 focus:outline-none ' +
+                'group flex w-full items-center rounded-xl px-3 py-3 text-start text-sm transition-all duration-200 hover:bg-[#F4F7FC] focus:bg-[#F4F7FC] focus:outline-none ' +
                 className
             }
         >

@@ -1,16 +1,13 @@
 import React, { useMemo } from 'react';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import AdminLayout from '@/Layouts/AdminLayout';
+import { Head, useForm, usePage } from '@inertiajs/react';
 import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
-import TextInput from '@/Components/TextInput';
 
-export default function KnowledgeForm({ auth, document }) {
+export default function KnowledgeForm({ document }) {
     const isEdit = !!document;
     const { props } = usePage();
 
-    // Fungsi untuk mengekstrak data dari teks "content" buatan FastAPI
+    // Membaca data syarat, catatan, dan URL dari content
     const parsedData = useMemo(() => {
         let syarat = [];
         let note = '';
@@ -18,137 +15,355 @@ export default function KnowledgeForm({ auth, document }) {
 
         if (document?.content) {
             const lines = document.content.split('\n');
-            let isParsingSyarat = false;
+            let currentSection = null;
 
-            lines.forEach(line => {
+            lines.forEach((line) => {
                 const text = line.trim();
-                if (text.startsWith('Syarat:')) { isParsingSyarat = true; return; }
-                if (text.startsWith('Catatan:')) { isParsingSyarat = false; note = text.replace('Catatan:', '').trim(); return; }
-                if (text.startsWith('URL Rujukan:')) { isParsingSyarat = false; channel_url = text.replace('URL Rujukan:', '').trim(); return; }
-                
-                if (isParsingSyarat && text.startsWith('-')) {
+
+                if (text.startsWith('Syarat:')) {
+                    currentSection = 'syarat';
+
+                    const value = text.replace('Syarat:', '').trim();
+                    if (value) syarat.push(value);
+                    return;
+                }
+
+                if (text.startsWith('Catatan:')) {
+                    currentSection = 'note';
+
+                    const value = text.replace('Catatan:', '').trim();
+                    if (value) {
+                        note = value;
+                    }
+                    return;
+                }
+
+                if (
+                    text.startsWith('URL Rujukan:') ||
+                    text.startsWith('Kanal:')
+                ) {
+                    currentSection = null;
+                    channel_url = text
+                        .replace(/^(URL Rujukan:|Kanal:)/, '')
+                        .trim();
+                    return;
+                }
+
+                if (currentSection === 'syarat' && text.startsWith('-')) {
                     syarat.push(text.substring(1).trim());
+                    return;
+                }
+
+                if (currentSection === 'note' && text) {
+                    note += (note ? '\n' : '') + text;
                 }
             });
         }
+
         return {
             syarat: syarat.length > 0 ? syarat : [''],
             note,
-            channel_url
+            channel_url,
         };
     }, [document]);
 
-    const { data, setData, post, errors, processing } = useForm({
-        sop_name: document?.sop_name || '',
-        varian: document?.varian || '',
-        syarat: parsedData.syarat, 
+    // State formulir
+    const { data, setData, post, errors, processing, isDirty } = useForm({
+        sop_name: document ? document.sop_name : '',
+        varian: document ? document.varian : '',
+        syarat: parsedData.syarat,
         channel_url: parsedData.channel_url,
-        note: parsedData.note
+        note: parsedData.note,
     });
 
-    const addSyarat = () => setData('syarat', [...data.syarat, '']);
+    // Menambah syarat
+    function addSyarat() {
+        setData('syarat', [...data.syarat, '']);
+    }
 
-    const handleSyaratChange = (index, value) => {
-        const newSyarat = [...data.syarat];
-        newSyarat[index] = value;
-        setData('syarat', newSyarat);
-    };
+    // Mengubah syarat
+    function handleSyaratChange(index, value) {
+        const updated = [...data.syarat];
+        updated[index] = value;
+        setData('syarat', updated);
+    }
 
-    const removeSyarat = (index) => {
+    // Menghapus syarat
+    function removeSyarat(index) {
         if (data.syarat.length > 1) {
-            setData('syarat', data.syarat.filter((_, i) => i !== index));
+            setData(
+                'syarat',
+                data.syarat.filter((_, i) => i !== index),
+            );
         }
-    };
+    }
 
-    const submit = (e) => {
+    // Submit formulir
+    function submit(e) {
         e.preventDefault();
         post(route('knowledge.store'));
-    };
+    }
 
     return (
-        <AuthenticatedLayout
-            user={auth.user}
-            header={
-                <div className="flex gap-4 items-center">
-                    <Link href={route('knowledge.index')} className="text-gray-500 hover:text-gray-700">
-                        &larr; Kembali
-                    </Link>
-                    <h2 className="font-semibold text-xl text-gray-800 leading-tight">
-                        {isEdit ? 'Edit Aturan SOP' : 'Tambah Aturan SOP Baru'}
-                    </h2>
-                </div>
-            }
-        >
+        <AdminLayout>
             <Head title={isEdit ? 'Edit SOP' : 'Tambah SOP'} />
 
-            <div className="py-12">
-                <div className="max-w-4xl mx-auto sm:px-6 lg:px-8 space-y-6">
-                    
-                    {props.errors.ai_error && (
-                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-                            {props.errors.ai_error}
-                        </div>
-                    )}
+            <div className="mx-auto max-w-7xl space-y-7">
 
-                    <div className="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                        <form onSubmit={submit} className="space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <InputLabel htmlFor="sop_name" value="Kategori Layanan (SOP Name)" />
-                                    <TextInput id="sop_name" value={data.sop_name} onChange={(e) => setData('sop_name', e.target.value)} type="text" className="mt-1 block w-full bg-gray-50" placeholder="Contoh: Pembuatan KTP" required readOnly={isEdit} />
-                                    <InputError message={errors.sop_name} className="mt-2" />
-                                </div>
-                                <div>
-                                    <InputLabel htmlFor="varian" value="Kondisi Khusus (Varian)" />
-                                    <TextInput id="varian" value={data.varian} onChange={(e) => setData('varian', e.target.value)} type="text" className="mt-1 block w-full bg-gray-50" placeholder="Contoh: Hilang" required readOnly={isEdit} />
-                                    <InputError message={errors.varian} className="mt-2" />
-                                </div>
-                            </div>
+                {/* Page Heading */}
+                <div>
+                    <p className="mb-2 text-[10px] font-medium tracking-[1.5px] text-[#88867F]">
+                        PENGELOLAAN PEPEBOT
+                    </p>
 
-                            <div className="p-4 border border-gray-200 rounded-md bg-gray-50">
-                                <InputLabel value="Daftar Syarat & Ketentuan" />
-                                <div className="mt-2 space-y-3">
-                                    {data.syarat.map((item, index) => (
-                                        <div key={index} className="flex items-center gap-2">
-                                            <TextInput 
-                                                value={item} 
-                                                onChange={(e) => handleSyaratChange(index, e.target.value)} 
-                                                type="text" 
-                                                className="block w-full" 
-                                                placeholder={`Syarat ${index + 1}...`} 
-                                                required 
-                                            />
-                                            <button type="button" onClick={() => removeSyarat(index)} className="px-3 py-2 bg-red-100 text-red-600 hover:bg-red-200 rounded-md font-bold" disabled={data.syarat.length === 1}>
-                                                &times;
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                                <button type="button" onClick={addSyarat} className="mt-3 text-sm text-blue-600 hover:text-blue-800 font-medium">
-                                    + Tambah Syarat Lainnya
-                                </button>
-                            </div>
+                    <h1 className="text-2xl font-bold tracking-tight text-[#37352D] sm:text-[30px]">
+                        {isEdit ? 'Edit Dokumen Desa' : 'Tambah Dokumen Desa'}
+                    </h1>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <InputLabel htmlFor="channel_url" value="URL Rujukan (Opsional)" />
-                                    <TextInput id="channel_url" value={data.channel_url} onChange={(e) => setData('channel_url', e.target.value)} type="text" className="mt-1 block w-full" placeholder="https://..." />
-                                </div>
-                                <div>
-                                    <InputLabel htmlFor="note" value="Catatan Tambahan (Opsional)" />
-                                    <TextInput id="note" value={data.note} onChange={(e) => setData('note', e.target.value)} type="text" className="mt-1 block w-full" placeholder="Contoh: Proses 3 hari kerja" />
-                                </div>
-                            </div>
+                    <p className="mt-2 text-sm text-[#88867F]">
+                        Tambah SOP dan Peraturan Desa sebagai sumber jawaban Pepebot.
+                    </p>
+                </div>
 
-                            <div className="border-t pt-4">
-                                <PrimaryButton disabled={processing} className="w-full justify-center">
-                                    {processing ? 'Menyimpan & Embedding...' : 'Simpan Aturan ke AI'}
-                                </PrimaryButton>
-                            </div>
-                        </form>
+                {/* Error dari AI Service */}
+                {props.errors.ai_error && (
+                    <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-3 text-sm text-red-700">
+                        {props.errors.ai_error}
                     </div>
+                )}
+
+                {/* Form */}
+                <form onSubmit={submit}>
+                    <div className="rounded-2xl border border-[#E1E2E3] bg-white px-8 py-8">
+
+                        {/* Card Header */}
+                        <div className="mb-6">
+                            <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-[#F4F5F6] text-[#514C40]">
+                                <svg
+                                    width="22"
+                                    height="22"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="1.8"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                >
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                    <path d="M14 2v6h6M8 13h8M8 17h8" />
+                                </svg>
+                            </div>
+
+                            <h2 className="text-base font-bold text-[#37352D]">
+                                Isi Formulir Dokumen
+                            </h2>
+
+                            <p className="mt-1 text-xs text-[#88867F]">
+                                Isi judul, kategori, dan isi dokumen untuk ditinjau sebelum disimpan.
+                            </p>
+
+                            <p className="text-xs text-[#88867F]">
+                                Pastikan judul, kategori, dan isi dokumen sudah sesuai.
+                            </p>
+                        </div>
+
+                        {/* Nama SOP dan Kondisi Khusus */}
+                        <div className="mb-5 grid grid-cols-1 gap-5 md:grid-cols-2">
+
+                            <div>
+                                <label
+                                    htmlFor="sop_name"
+                                    className="mb-2 block text-xs font-medium text-[#37352D]"
+                                >
+                                    Nama Layanan / SOP
+                                </label>
+
+                                <input
+                                    id="sop_name"
+                                    type="text"
+                                    value={data.sop_name}
+                                    onChange={(e) => setData('sop_name', e.target.value)}
+                                    placeholder="Contoh: Panduan KK"
+                                    required
+                                    readOnly={isEdit}
+                                    className="w-full rounded-xl border border-[#E1E2E3] bg-white px-4 py-3 text-sm text-[#37352D] placeholder:text-[#A5A39D] focus:border-[#2750B4] focus:outline-none focus:ring-1 focus:ring-[#2750B4] read-only:bg-[#F5F6F7]"
+                                />
+
+                                <InputError message={errors.sop_name} className="mt-2" />
+                            </div>
+
+                            <div>
+                                <label
+                                    htmlFor="varian"
+                                    className="mb-2 block text-xs font-medium text-[#37352D]"
+                                >
+                                    Kondisi Khusus
+                                </label>
+
+                                <input
+                                    id="varian"
+                                    type="text"
+                                    value={data.varian}
+                                    onChange={(e) => setData('varian', e.target.value)}
+                                    placeholder="Contoh: Pindah KK"
+                                    required
+                                    readOnly={isEdit}
+                                    className="w-full rounded-xl border border-[#E1E2E3] bg-white px-4 py-3 text-sm text-[#37352D] placeholder:text-[#A5A39D] focus:border-[#2750B4] focus:outline-none focus:ring-1 focus:ring-[#2750B4] read-only:bg-[#F5F6F7]"
+                                />
+
+                                <InputError message={errors.varian} className="mt-2" />
+                            </div>
+                        </div>
+
+                        {/* Daftar Syarat */}
+                        <div>
+                            <label className="mb-3 block text-xs font-medium text-[#37352D]">
+                                Daftar Syarat &amp; Ketentuan
+                            </label>
+
+                            <div className="space-y-3">
+                                {data.syarat.map((item, index) => (
+                                    <div key={index} className="flex items-center gap-2">
+                                        <input
+                                            type="text"
+                                            value={item}
+                                            onChange={(e) =>
+                                                handleSyaratChange(index, e.target.value)
+                                            }
+                                            placeholder={'Syarat ' + (index + 1)}
+                                            required
+                                            className="w-full rounded-xl border border-[#E1E2E3] bg-white px-4 py-3 text-sm text-[#37352D] placeholder:text-[#A5A39D] focus:border-[#2750B4] focus:outline-none focus:ring-1 focus:ring-[#2750B4]"
+                                        />
+
+                                        <button
+                                            type="button"
+                                            onClick={() => removeSyarat(index)}
+                                            disabled={data.syarat.length === 1}
+                                            title="Hapus syarat"
+                                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#E1E2E3] text-[#88867F] transition hover:border-red-300 hover:bg-red-50 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-30"
+                                        >
+                                            <svg
+                                                width="14"
+                                                height="14"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="2"
+                                                strokeLinecap="round"
+                                            >
+                                                <path d="M18 6 6 18M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={addSyarat}
+                                className="mt-4 inline-flex items-center gap-2 rounded-xl border border-[#E1E2E3] px-4 py-2.5 text-sm font-medium text-[#514C40] transition hover:bg-[#F5F6F7]"
+                            >
+                                <span>+</span>
+                                Tambah Syarat
+                            </button>
+                        </div>
+
+                        {/* URL Rujukan */}
+                        <div className="mt-7">
+                            <label
+                                htmlFor="channel_url"
+                                className="mb-2 block text-xs font-medium text-[#37352D]"
+                            >
+                                URL Rujukan
+                                <span className="ml-1 font-normal text-[#A5A39D]">
+                                    (Opsional)
+                                </span>
+                            </label>
+
+                            <input
+                                id="channel_url"
+                                type="text"
+                                value={data.channel_url}
+                                onChange={(e) =>
+                                    setData('channel_url', e.target.value)
+                                }
+                                placeholder="Masukkan URL atau kanal rujukan dokumen"
+                                className="w-full rounded-xl border border-[#E1E2E3] bg-white px-4 py-3 text-sm text-[#37352D] placeholder:text-[#A5A39D] focus:border-[#2750B4] focus:outline-none focus:ring-1 focus:ring-[#2750B4]"
+                            />
+
+                            <InputError
+                                message={errors.channel_url}
+                                className="mt-2"
+                            />
+                        </div>
+
+                        {/* Catatan */}
+                        <div className="mt-5">
+                            <label
+                                htmlFor="note"
+                                className="mb-2 block text-xs font-medium text-[#37352D]"
+                            >
+                                Catatan
+                                <span className="ml-1 font-normal text-[#A5A39D]">
+                                    (Opsional)
+                                </span>
+                            </label>
+
+                            <textarea
+                                id="note"
+                                rows={4}
+                                value={data.note}
+                                onChange={(e) =>
+                                    setData('note', e.target.value)
+                                }
+                                placeholder="Tambahkan catatan atau informasi khusus terkait SOP..."
+                                className="w-full resize-y rounded-xl border border-[#E1E2E3] bg-white px-4 py-3 text-sm text-[#37352D] placeholder:text-[#A5A39D] focus:border-[#2750B4] focus:outline-none focus:ring-1 focus:ring-[#2750B4]"
+                            />
+
+                            <InputError
+                                message={errors.note}
+                                className="mt-2"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Tombol Simpan */}
+                    <div className="mt-6 flex justify-end">
+                        <button
+                            type="submit"
+                            disabled={processing || (isEdit && !isDirty)}
+                            className="inline-flex items-center justify-center rounded-xl bg-[#2750B4] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#1D3D8A] disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                            {processing 
+                                ? 'Menyimpan & Embedding...' 
+                                : isEdit
+                                    ? isDirty
+                                        ? 'Simpan Perubahan'
+                                        : 'Tidak Ada Perubahan'
+                                    : 'Simpan SOP'}
+                        </button>
+                    </div>
+                </form>
+
+                {/* Footer */}
+                <div className="flex items-center gap-2 text-[11px] text-[#A5A39D]">
+                    <svg
+                        width="13"
+                        height="13"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    >
+                        <rect x="3" y="11" width="18" height="11" rx="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+
+                    Ruang kerja internal perangkat: Desa Pepe
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </AdminLayout>
     );
 }

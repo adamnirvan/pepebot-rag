@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\Admin\KnowledgeController;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\Admin\DashboardController;
 
 Route::get('/', function () {
     if (Auth::check()) {
@@ -15,9 +16,9 @@ Route::get('/', function () {
     return Inertia::render('Welcome');
 })->name('home');
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
 Route::get('/chat', function () {
     return Inertia::render('Chat/Index');
