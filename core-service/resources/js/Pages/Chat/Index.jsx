@@ -22,6 +22,24 @@ export default function ChatIndex() {
         scrollToBottom();
     }, [messages]);
 
+    /**
+     * Menyusun riwayat percakapan (maks 6 pesan terakhir, tanpa pesan
+     * sambutan awal) untuk dikirim ke AI Service agar bot memahami
+     * konteks lanjutan percakapan.
+     */
+    const buildHistory = (currentMessages) => {
+        // Ambil semua pesan kecuali sambutan pertama
+        const relevantMessages = currentMessages.slice(1);
+
+        // Ambil maksimal 6 pesan terakhir
+        const recent = relevantMessages.slice(-6);
+
+        return recent.map(msg => ({
+            role: msg.sender === 'user' ? 'warga' : 'bot',
+            text: msg.text,
+        }));
+    };
+
     const sendMessage = async (e) => {
         e.preventDefault();
 
@@ -29,17 +47,19 @@ export default function ChatIndex() {
 
         const userText = input;
 
-        setMessages(prev => [
-            ...prev,
+        const updatedMessages = [
+            ...messages,
             { sender: 'user', text: userText }
-        ]);
+        ];
 
+        setMessages(updatedMessages);
         setInput('');
         setIsLoading(true);
 
         try {
             const response = await axios.post('/api/chat', {
-                message: userText
+                message: userText,
+                history: buildHistory(updatedMessages),
             });
 
             setMessages(prev => [

@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from app.core.db import engine, Base
 from app.api.router import api_router
+from app.models import chat_history  # noqa: F401 — daftarkan tabel riwayat
 
 # Mencetak tabel ke database secara otomatis saat server menyala
 Base.metadata.create_all(bind=engine)

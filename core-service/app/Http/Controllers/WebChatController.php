@@ -15,20 +15,25 @@ class WebChatController extends Controller
         // Validasi input dari frontend
         $request->validate([
             'message' => 'required|string|max:1000',
+            'history' => 'nullable|array|max:10',
+            'history.*.role' => 'required_with:history|string|in:warga,bot',
+            'history.*.text' => 'required_with:history|string|max:2000',
         ]);
 
         $userMessage = $request->input('message');
+        $history = $request->input('history', []);
         
         $url = rtrim((string) config('services.ai_service.url'), '/').'/api/chat';
         $key = (string) config('services.ai_service.key');
 
         try {
-            // Panggil AI Service dengan channel "WEB"
+            // Panggil AI Service dengan channel "WEB" dan riwayat percakapan
             $response = Http::withHeaders(['X-Internal-Key' => $key])
                 ->timeout(45)
                 ->post($url, [
                     'query' => $userMessage,
-                    'channel' => 'Web'
+                    'channel' => 'Web',
+                    'history' => $history,
                 ]);
         } catch (Throwable $error) {
             Log::error('ai-service web error', ['error' => $error->getMessage()]);

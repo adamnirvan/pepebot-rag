@@ -4,6 +4,7 @@ Mengubah 1 koper Varian (judul + syarat + kanal + note) menjadi vektor
 768 dimensi via Gemini, dan sebaliknya untuk pertanyaan warga.
 """
 
+from functools import lru_cache
 from google import genai
 from google.genai import types
 from app.core.config import settings
@@ -60,6 +61,12 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
     return vectors
 
 
+@lru_cache(maxsize=256)
+def _embed_query_cached(normalized_text: str) -> tuple[float, ...]:
+    """Menyimpan vektor pertanyaan yang sama di memori agar tidak memanggil API berulang."""
+    return tuple(embed_texts([normalized_text])[0])
+
+
 def embed_query(text: str) -> list[float]:
-    """Mengubah pertanyaan warga menjadi 1 baris vektor"""
-    return embed_texts([text])[0]
+    """Mengubah pertanyaan warga menjadi 1 baris vektor (memanfaatkan cache memori)."""
+    return list(_embed_query_cached(text.strip()))
