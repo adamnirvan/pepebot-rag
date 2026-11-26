@@ -1,20 +1,26 @@
-# Menggunakan PHP 8.5 (Sesuai dengan versi lokal Anda)
 FROM php:8.5-cli
 
-# Install dependensi sistem yang dibutuhkan Laravel & ekstensi database PostgreSQL
 RUN apt-get update && apt-get install -y \
     git curl libpng-dev libonig-dev libxml2-dev zip unzip libpq-dev \
-    && docker-php-ext-install pdo_pgsql mbstring exif pcntl bcmath gd
+    && docker-php-ext-install pdo_pgsql mbstring exif pcntl bcmath gd \
+    && rm -rf /var/lib/apt/lists/*
 
-# Membawa masuk Composer (Package Manager PHP)
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Install Node.js versi 26.x (Sesuai dengan Node 26.10.0 lokal Anda)
 RUN curl -fsSL https://deb.nodesource.com/setup_26.x | bash - \
-    && apt-get install -y nodejs
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
 
-# Tentukan folder kerja utama di dalam container
 WORKDIR /app
 
-# Perintah yang dijalankan ketika container menyala
-CMD bash -c "composer install && npm install && npm run dev"
+COPY . .
+
+RUN composer install --no-dev --optimize-autoloader --no-interaction
+
+RUN npm ci && npm run build
+
+RUN chown -R www-data:www-data storage bootstrap/cache
+
+EXPOSE 8000
+
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]

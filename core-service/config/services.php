@@ -65,5 +65,9 @@ return [
         'url' => env('AI_SERVICE_URL', 'http://ai-service:8001'),
         'key' => env('INTERNAL_API_KEY'),
     ],
+    'waha' => [
+        'url' => env('WAHA_API_URL', 'http://waha:3000'),
+        'token' => env('WAHA_API_KEY'),
+    ],
 
 ];

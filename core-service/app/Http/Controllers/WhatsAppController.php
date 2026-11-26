@@ -118,7 +118,9 @@ class WhatsAppController extends Controller
         $wahaUrl = rtrim((string) config('services.waha.url', 'http://waha:3000'), '/');
 
         try {
-            $response = Http::timeout(30)->post("{$wahaUrl}/api/sendText", [
+            $response = Http::withHeaders([
+                'X-Api-Key' => config('services.waha.token'),
+            ])->timeout(30)->post("{$wahaUrl}/api/sendText", [
                 'chatId' => $to,
                 'text' => $body,
                 'session' => 'default'

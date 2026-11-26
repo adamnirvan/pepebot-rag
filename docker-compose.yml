@@ -2,13 +2,11 @@ services:
   postgres-db:
     image: pgvector/pgvector:pg15
     container_name: pepebot_postgres
-    restart: always
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: ${DB_DATABASE:?isi DB_DATABASE di .env}
-      POSTGRES_USER: ${DB_USERNAME:?isi DB_USERNAME di .env}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:?isi DB_PASSWORD di .env}
-    ports:
-      - "127.0.0.1:5432:5432"
+      POSTGRES_DB: ${DB_DATABASE:?DB_DATABASE wajib diisi}
+      POSTGRES_USER: ${DB_USERNAME:?DB_USERNAME wajib diisi}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD wajib diisi}
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./db/init:/docker-entrypoint-initdb.d:ro
@@ -24,13 +22,13 @@ services:
     container_name: pepebot_core
     restart: unless-stopped
     ports:
-      - "8000:8000"
-      - "5173:5173"
-    volumes:
-      - ./core-service:/app
+      - "127.0.0.1:8000:8000"
+    env_file:
+      - ./core-service/.env
     environment:
-      - DB_HOST=postgres-db
-      - AI_SERVICE_URL=http://ai-service:8001
+      DB_HOST: postgres-db
+      DB_PORT: 5432
+      AI_SERVICE_URL: http://ai-service:8001
     depends_on:
       postgres-db:
         condition: service_healthy
@@ -40,37 +38,28 @@ services:
       context: ./ai-service
     container_name: pepebot_ai
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:8001:8001"
     env_file:
       - ./ai-service/.env
     environment:
       DATABASE_URL: postgresql://${DB_USERNAME}:${DB_PASSWORD}@postgres-db:5432/${DB_DATABASE}
-    volumes:
-      - ./ai-service:/app
-    command: uvicorn main:app --host 0.0.0.0 --port 8001 --reload
     depends_on:
       postgres-db:
         condition: service_healthy
+
   waha:
     image: devlikeapro/waha
     container_name: pepebot_waha
     platform: linux/amd64
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./waha_data:/app/.waha  # <-- INI KUNCINYA AGAR SESI TIDAK HILANG
-    environment:
-      - WHATSAPP_DEFAULT_ENGINE=WEBJS
-      - WHATSAPP_HOOK_URL=http://core-service:8000/api/webhook/whatsapp
-      - WHATSAPP_HOOK_EVENTS=message
-      - WAHA_API_KEY=
-      - WAHA_NO_API_KEY=True
-      - WAHA_DASHBOARD_PASSWORD=
-      - WAHA_DASHBOARD_NO_PASSWORD=True
-      - WHATSAPP_SWAGGER_PASSWORD=
-      - WHATSAPP_SWAGGER_NO_PASSWORD=True
     restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - ./waha_data:/app/.waha
+    environment:
+      WHATSAPP_DEFAULT_ENGINE: WEBJS
+      WHATSAPP_HOOK_URL: http://core-service:8000/api/webhook/whatsapp
+      WHATSAPP_HOOK_EVENTS: message
+      WAHA_API_KEY: ${WAHA_API_KEY:?WAHA_API_KEY wajib diisi}
 
 volumes:
   pgdata:
