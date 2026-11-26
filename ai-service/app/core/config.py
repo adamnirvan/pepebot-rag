@@ -9,7 +9,9 @@ class Settings(BaseSettings):
     EMBEDDING_DIM: int = 768
     LLM_MODEL: str = "gemini-3.5-flash-lite"
     RETRIEVAL_THRESHOLD: float = 0.65
-    TOP_K: int = 4
+    MIN_RETRIEVAL_THRESHOLD: float = 0.40
+    TOP_K: int = 6
+    SESSION_MAX_HISTORY: int = 6
     # Kontak fallback: nilai di bawah adalah default lama (tetap dipakai bila env
     # tidak diisi), tetapi bisa ditimpa lewat environment/.env tanpa ubah kode.
     DESA_PETUGAS_WA: str = "081234567890"
